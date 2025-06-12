@@ -1,70 +1,111 @@
-# Deep unsupervised anomaly detection algorithms
-This repository collects different unsupervised machine learning algorithms to detect anomalies.
-## Implemented models
-We have implemented the following models. Our implementations of ALAD, DeepSVDD, 
-DROCC and MemAE closely follows the original implementations already available on GitHub.
-- [x] [AutoEncoder]()
-- [x] [ALAD](https://arxiv.org/abs/1812.02288)
-- [x] [DAGMM](https://sites.cs.ucsb.edu/~bzong/doc/iclr18-dagmm.pdf)
-- [x] [DeepSVDD](http://proceedings.mlr.press/v80/ruff18a.html)
-- [x] [DSEBM](https://arxiv.org/abs/1605.07717)
-- [x] [DROCC](https://arxiv.org/abs/2002.12718)
-- [x] [DUAD](https://openaccess.thecvf.com/content/WACV2021/papers/Li_Deep_Unsupervised_Anomaly_Detection_WACV_2021_paper.pdf)
-- [x] [LOF](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.LocalOutlierFactor.html)
-- [x] [MemAE](https://openaccess.thecvf.com/content_ICCV_2019/papers/Gong_Memorizing_Normality_to_Detect_Anomaly_Memory-Augmented_Deep_Autoencoder_for_Unsupervised_ICCV_2019_paper.pdf)
-- [x] [NeuTraLAD](https://arxiv.org/pdf/2103.16440.pdf)
-- [x] [OC-SVM](https://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html)
-- [x] [RecForest](https://epubs.siam.org/doi/pdf/10.1137/1.9781611976700.15)
-- [x] [SOM-DAGMM](https://arxiv.org/pdf/2008.12686.pdf)
+# 🔍 ANADOE: Anomaly Detection with Outlier Exposure
 
-## Dependencies
-A complete dependency list is available in requirements.txt.
-We list here the most important ones:
-- torch@1.10.2 with CUDA 11.3
-- numpy
-- pandas
-- scikit-learn
+## 🧠 Overview
 
-## Installation
-Assumes latest version of Anaconda was installed.
-```
-$ conda create --name [ENV_NAME] python=3.8
-$ conda activate [ENV_NAME]
-$ pip install -r requirements.txt
-```
-Replace `[ENV_NAME]` with the name of your environment.
+**ANADOE** is a novel anomaly detection algorithm designed to train Deep Auto-Encoders (DAEs) in the presence of *contaminated training datasets*. It leverages **outlier exposure** to identify anomalous samples within the training set and optimizes a **weighted joint loss function** that considers both benign and malicious samples.
 
-## Usage
-From the root of the project.
-```
-$ python -m src.main 
--m [model_name]
--d [/path/to/dataset/file.{npz,mat}]
---dataset [dataset_name]
---batch-size [batch_size]
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Ensure Python 3.6+ is installed, along with required libraries:
+
+```bash
+pip install -r requirements.txt
 ```
 
-Our model contains the following parameters:
-- `-m`: selected machine learning model (**required**)
-- `-d`: path to the dataset (**required**)
-- `--batch-size`: size of a training batch (**required**)
-- `--dataset`: name of the selected dataset. Choices are `Arrhythmia`, `KDD10`, `IDS2018`, `NSLKDD`, `USBIDS`, `Thyroid` (**required**).
-- `-e`: number of training epochs (default=200)
-- `--n-runs`: number of time the experiment is repeated (default=1)
-- `--lr`: learning rate used during optimization (default=1e-4)
-- `--pct`: percentage of the original data to keep (useful for large datasets, default=1.)
-- `rho`: anomaly ratio within the training set (default=0.)
-- `--results-path`: path where the results are stored (default="../results")
-- `--model-path`: path where models will be stored (default="../models")
-- `--test-mode`: loads models from `--model_path` and tests them (default=False)
-Please note that datasets must be stored in `.npz` or `.mat` files. Use the preprocessing scripts within `data_process`
-to generate these files.
+### Running an Experiment
 
-## Example
-To train a DAGMM on the KDD 10 percent dataset with the default parameters described in the original paper:
+```bash
+python main.py -m MODEL -d /path/to/dataset --dataset DATASET_NAME -e 100 --batch-size 64
 ```
-$ python  -m src.main -m DAGMM -d [/path/to/dataset.npz] --dataset KDD10 --batch-size 1024 --results-path ./results/KDD10 --models-path ./models/KDD10
-```
-Replace `[/path/to/dataset.npz]` with the path to the dataset in a numpy-friendly format.
 
-Optionally, a Jupyter notebook is made available in `experiments.ipynb`
+---
+
+## ⚙️ Command-Line Arguments
+
+| Argument | Description | Type | Default |
+|----------|-------------|------|---------|
+| `-m`, `--model` | Model name (`"AE","KitNet","ALAD","DUAD","NeuTraLAD",`) | `str` | **Required** |
+| `-d`, `--dataset-path` | Path to dataset | `str` | **Required** |
+| `--dataset` | Dataset name (`available_datasets`) | `str` | **Required** |
+| `-e`, `--n-epochs` | Number of epochs | `int` | 200 |
+| `--n-runs` | Number of runs | `int` | 1 |
+| `--batch-size` | Training batch size | `int` | **Required** |
+| `--batch-size-test` | Test batch size | `int` | None |
+| `--lr` | Learning rate | `float` | 0.0001 |
+| `--weight_decay` | Weight decay | `float` | 0 |
+| `--test_pct` | Train/test split ratio | `float` | 0.5 |
+| `--val_ratio` | Validation split ratio | `float` | 0.2 |
+| `--hold_out` | Anomalous data held out | `float` | 0.0 |
+| `--rho` | Anomaly ratio in training | `float` | 0.0 |
+| `--pct` | % of original data to use | `float` | 1.0 |
+| `--results-path` | Save directory | `str` | None |
+| `--model-path` | Model weight path | `str` | `./` |
+| `--test-mode` | Only run tests | `bool` | False |
+| `--seed` | Random seed | `int` | 42 |
+
+### 🔧 Model-Specific & Robustness Parameters
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `--latent-dim` | AE latent dimension | `1` |
+| `--trans-type` | Transformer type (`res`/`mul`) | `"res"` |
+| `--duad_r`, `--duad_p_s`, `--duad_p_0`, `--duad_num-cluster` | DUAD settings | `10`, `35`, `30`, `20` |
+| `--rob`, `--rob-sup`, `--rob-reg` | Enable robust training options | `False` |
+| `--rob_method` | Robust method (`refine`, `loe`, `our`, `sup`) | `"daecd"` |
+| `--drop_lastbatch` | Drop last batch if incomplete | `False` |
+| `--eval-test` | Evaluate test set after training | `False` |
+| `--early_stopping` | Enable early stopping | `True` |
+| `--warmup` | Warm-up epochs | `0` |
+| `--alpha-off-set`, `--reg_n`, `--reg_a` | Regularization settings | `0`, `0.0`, `1e-3` |
+| `--type_center` | Centering method (`zero`, `mean`, `learnable`) | `"zero"` |
+| `--num_clusters`, `--n_aes` | number of autoencoders | `3`, `5` |
+
+---
+
+## 🧪 Example Usage
+
+```bash
+python main.py \
+  -m ae \
+  --dataset-path ./data/iot_traffic \
+  --dataset iot \
+  --batch-size 64 \
+  -e 100 \
+  --lr 0.001 \
+  --rob \
+  --rob_method our \
+  --early_stopping
+```
+
+---
+
+## 📁 Output
+
+- Model checkpoints (if `--model-path` is set)
+- Result logs (metrics, plots, etc.) in `--results-path`
+- Performance evaluation for both clean and contaminated scenarios
+
+---
+
+## 🛡️ Key Features
+
+✅ Supports multiple datasets and models  
+✅ Robustness settings to handle noisy/anomalous training data   
+✅ Flexible model saving/loading  
+✅ Early stopping, warm-up, regularization options
+
+---
+
+## 📚 Citation
+
+If you use this framework in your research, please cite the corresponding paper (to be added).
+
+---
+
+## 📜 License
+
+This project is released under the MIT License. See `LICENSE` for more information.
